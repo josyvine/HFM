@@ -21,13 +21,12 @@ jobs:
       - name: Build with Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          # FIX 1: This is the critical line that the new error message told us to add.
-          # It tells the builder to use a specific version of Gradle instead of
-          # looking for the missing 'gradlew' file in your project.
-          gradle-version: 7.3.3
+          # --- THIS IS THE FIX ---
+          # Downgrade Gradle to a version that is fully compatible with AGP 7.0.4
+          # to resolve the AAPT2 linking error.
+          gradle-version: '7.2'
 
-          # FIX 2: This is to prevent the very first "Cache service unavailable" error.
-          # We need to keep this to be safe.
+          # This is to prevent a potential cache error.
           cache-disabled: true
 
           # This is the command to build your app.
