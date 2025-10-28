@@ -218,7 +218,7 @@
             android:label="HFM Share"
             android:theme="@style/AppTheme.Light"
             android:exported="false"/>
-        <activity
+        <activity 
             android:name=".FilePickerActivity"
             android:label="Select Files"
             android:theme="@style/AppTheme.Light"
