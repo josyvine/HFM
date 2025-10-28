@@ -1,66 +1,299 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.kop.app">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.hfm.app">
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-sdk
+        android:minSdkVersion="21"
+        android:targetSdkVersion="34"
+        tools:overrideLibrary="com.google.android.gms.ads_identifier" />
 
-    <!-- START OF ADDED PERMISSION FOR AI FEATURE -->
-    <!-- Required to allow the app to connect to the Gemini API over the network. -->
+    <!-- Permissions for File Access -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+
+    <!-- Permissions for Network & Services -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- END OF ADDED PERMISSION FOR AI FEATURE -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Permission to get cache size of other apps -->
+    <uses-permission android:name="android.permission.GET_PACKAGE_SIZE" />
 
-    <!-- Declare that the app uses the camera feature -->
-    <uses-feature android:name="android.hardware.camera.any" android:required="true" />
+    <!-- NEW PERMISSIONS FOR WI-FI DIRECT SHARE & NOTIFICATIONS -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
-    <!-- *** START OF ADDED FEATURE DECLARATION FOR GPU SUPPORT *** -->
-    <!-- Declares that the app requires OpenGL ES 2.0 or higher for GPU rendering. -->
-    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
-    <!-- *** END OF ADDED FEATURE DECLARATION FOR GPU SUPPORT *** -->
+
+    <!-- Permissions for Sensor Ritual Lock -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
+
+    <!-- Declare that the app uses these sensors. 'required="false"' means the app can run
+	on devices without them, though the hide feature might be limited. -->
+    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.proximity" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.light" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <!-- NEW: Declare that the app uses Wi-Fi Direct -->
+    <uses-feature android:name="android.hardware.wifi.direct" android:required="true" />
+
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/kop"
-        android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:requestLegacyExternalStorage="true"
-        android:theme="@style/AppTheme">
+        android:icon="@drawable/hfm"
+        android:label="HFM App">
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:configChanges="orientation|screenSize"
+            android:exported="true"
+            android:theme="@style/AppTheme.MainActivity">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- *** START OF CORRECTED ACTIVITY DECLARATION FOR LIVE CAMERA *** -->
-        <!-- Registers the new GPU-based camera activity with the Android system. -->
-        <!-- FIX: The theme has been changed from a system theme to the app's compatible theme to prevent the crash. -->
         <activity
-            android:name=".CameraFilterActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme" />
-        <!-- *** END OF CORRECTED ACTIVITY DECLARATION FOR LIVE CAMERA *** -->
+            android:name=".SearchActivity"
+            android:label="Search Files"
+            android:theme="@style/AppTheme.Light"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false"/>
 
-        <!--
-          REMOVED: The declarations for MediaPickerActivity and ProcessingActivity are gone
-          because they have been converted into DialogFragments, which do not need to be
-          declared in the manifest.
-        -->
+        <activity
+            android:name=".MassDeleteActivity"
+            android:label="Mass Selection Delete"
+            android:theme="@style/AppTheme.Light"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false"/>
+
+        <activity
+            android:name=".RecycleBinActivity"
+            android:label="Recycle Bin"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ContactActivity"
+            android:label="Contact Us"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".CacheCleanerActivity"
+            android:label="Cache Cleaner"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ReaderActivity"
+            android:label="File Reader"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".TextViewerActivity"
+            android:label="Text Viewer"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".PdfViewerActivity"
+            android:label="PDF Viewer"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ImageViewerActivity"
+            android:label="Image Viewer"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".VideoViewerActivity"
+            android:label="Video Viewer"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".AudioPlayerActivity"
+            android:label="Audio Player"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".StorageMapActivity"
+            android:label="Storage Map"
+            android:theme="@style/AppTheme.Dark"
+            android:exported="false"/>
+
+        <activity
+            android:name=".DashboardActivity"
+            android:label="Daily File Dashboard"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".StorageBrowserActivity"
+            android:label="Storage Browser"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".FolderListActivity"
+            android:label="Category Folders"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".FileDeleteActivity"
+            android:label="Delete Files"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".FileHiderActivity"
+            android:label="Secure File Hider"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".RitualListActivity"
+            android:label="Unlock Files"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".RitualRecordTapsActivity"
+            android:label="Create Ritual (Taps)"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".RitualRecordShakesActivity"
+            android:label="Create Ritual (Shakes)"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".RitualRecordOrientationActivity"
+            android:label="Create Ritual (Orientation)"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".RitualVerifyTapsActivity"
+            android:label="Unlock Ritual (Taps)"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".RitualVerifyShakesActivity"
+            android:label="Unlock Ritual (Shakes)"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".RitualVerifyOrientationActivity"
+            android:label="Unlock Ritual (Orientation)"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".MapFallbackSetupActivity"
+            android:label="Set Secret Location"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <activity
+            android:name=".MapFallbackUnlockActivity"
+            android:label="Verify Secret Location"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
+        <!-- HFM SHARE ACTIVITY DECLARATIONS -->
+        <activity
+            android:name=".ShareHubActivity"
+            android:label="HFM Share"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".FilePickerActivity"
+            android:label="Select Files"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".TransferProgressActivity"
+            android:label="Transfer Progress"
+            android:theme="@style/AppTheme.Light"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"/>
+
+        <!-- NEW ACTIVITY DECLARATIONS FOR THE NEW FILE SHARING FLOW -->
+        <activity
+            android:name=".CategoryPickerActivity"
+            android:label="Select Content"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".MediaPickerActivity"
+            android:label="Select Media"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".AppPickerActivity"
+            android:label="Select Apps"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+        <activity
+            android:name=".AdvancedFilePickerActivity"
+            android:label="Browse Files"
+            android:theme="@style/AppTheme.Light"
+            android:exported="false"/>
+
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
+            android:authorities="com.hfm.app.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths"/>
+                android:resource="@xml/file_provider_paths" />
         </provider>
 
+        <service
+            android:name=".DeleteService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+
+        <service
+            android:name=".FileOperationService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+
+        <service
+            android:name=".CompressionService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+
+        <service
+            android:name=".FileTransferService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+
+        <receiver
+            android:name=".WiFiDirectBroadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.net.wifi.p2p.STATE_CHANGED" />
+                <action android:name="android.net.wifi.p2p.PEERS_CHANGED" />
+                <action android:name="android.net.wifi.p2p.CONNECTION_STATE_CHANGE" />
+                <action android:name="android.net.wifi.p2p.THIS_DEVICE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
     </application>
+
 </manifest>
