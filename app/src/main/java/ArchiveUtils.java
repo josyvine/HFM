@@ -14,7 +14,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.core.app.NotificationCompat;
+import  androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
 import com.github.junrar.Archive;
