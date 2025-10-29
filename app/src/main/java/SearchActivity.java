@@ -316,42 +316,75 @@ public class SearchActivity extends Activity implements SearchAdapter.OnItemClic
         }
 
         List<SearchResult> results = new ArrayList<>();
+        // --- THIS IS THE FIX for the CursorWindow crash ---
+        // 1. Remove MediaStore.Files.FileColumns.DATA from the projection to reduce memory usage.
         String[] projection = {
             MediaStore.Files.FileColumns._ID,
             MediaStore.Files.FileColumns.MEDIA_TYPE,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
-            MediaStore.Files.FileColumns.DISPLAY_NAME,
-            MediaStore.Files.FileColumns.DATA
+            MediaStore.Files.FileColumns.DISPLAY_NAME
         };
         Cursor cursor = getContentResolver().query(queryUri, projection, selection.toString(),
 												   selectionArgs.toArray(new String[0]), MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC");
 
         if (cursor != null) {
-            int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID);
-            int mediaTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE);
-            int dateModifiedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED);
-            int displayNameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME);
-            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA);
-            while (cursor.moveToNext()) {
-                long id = cursor.getLong(idColumn);
-                int mediaType = cursor.getInt(mediaTypeColumn);
-                long dateModifiedSeconds = cursor.getLong(dateModifiedColumn);
-                String displayName = cursor.getString(displayNameColumn);
-                String path = cursor.getString(dataColumn);
-                Uri contentUri;
-                if (mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE) {
-                    contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
-                } else if (mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) {
-                    contentUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
-                } else {
-                    contentUri = ContentUris.withAppendedId(queryUri, id);
+            try {
+                int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID);
+                int mediaTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE);
+                int dateModifiedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED);
+                int displayNameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME);
+                
+                while (cursor.moveToNext()) {
+                    long id = cursor.getLong(idColumn);
+                    int mediaType = cursor.getInt(mediaTypeColumn);
+                    long dateModifiedSeconds = cursor.getLong(dateModifiedColumn);
+                    String displayName = cursor.getString(displayNameColumn);
+                    
+                    Uri contentUri;
+                    if (mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE) {
+                        contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
+                    } else if (mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) {
+                        contentUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
+                    } else {
+                        contentUri = ContentUris.withAppendedId(queryUri, id);
+                    }
+                    
+                    // 2. Get the path from the URI. This is slower per-item but memory-safe.
+                    String path = getPathFromUri(this, contentUri);
+
+                    results.add(new SearchResult(contentUri, id, dateModifiedSeconds * 1000, displayName, path));
                 }
-                results.add(new SearchResult(contentUri, id, dateModifiedSeconds * 1000, displayName, path));
+            } finally {
+                cursor.close();
             }
-            cursor.close();
         }
         return results;
     }
+
+    // --- NEW HELPER METHOD to get path from a content URI safely ---
+    private static String getPathFromUri(Context context, Uri contentUri) {
+        Cursor cursor = null;
+        try {
+            String[] proj = { MediaStore.Files.FileColumns.DATA };
+            cursor = context.getContentResolver().query(contentUri, proj, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int column_index = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA);
+                return cursor.getString(column_index);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to get path from URI: " + contentUri, e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        // Fallback for file URIs
+        if ("file".equals(contentUri.getScheme())) {
+            return contentUri.getPath();
+        }
+        return null;
+    }
+
 
     private List<SearchResult> performFallbackFileSearch(QueryParameters params) {
         List<SearchResult> results = new ArrayList<>();
