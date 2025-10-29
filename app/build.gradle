@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'com.hfm.app'
-    compileSdkVersion 34   
+    compileSdkVersion 34    
 
     defaultConfig {
         applicationId "com.hfm.app"
