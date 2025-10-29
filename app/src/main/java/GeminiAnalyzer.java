@@ -36,7 +36,8 @@ import okhttp3.Response;
 public class GeminiAnalyzer {
 
     private static final String TAG = "GeminiAnalyzer";
-    private static final String GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+    // --- THIS IS THE CORRECTED ENDPOINT AS YOU INSTRUCTED ---
+    private static final String GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
     private static final long MAX_TEXT_PAYLOAD_SIZE = 250000; // Limit text sent to API
 
     private Context context;
