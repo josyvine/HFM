@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: Ubuntu-latest 
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -21,10 +21,9 @@ jobs:
       - name: Build with Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          # --- THIS IS THE FIX ---
-          # Downgrade Gradle to a version that is fully compatible with AGP 7.0.4
-          # to resolve the AAPT2 linking error.
-          gradle-version: '7.2'
+          # --- THIS IS THE FINAL FIX ---
+          # The Android Gradle Plugin 7.4.2 requires Gradle version 7.5 or higher.
+          gradle-version: '7.5'
 
           # This is to prevent a potential cache error.
           cache-disabled: true
