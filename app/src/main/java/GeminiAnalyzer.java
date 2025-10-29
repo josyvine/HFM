@@ -36,7 +36,6 @@ import okhttp3.Response;
 public class GeminiAnalyzer {
 
     private static final String TAG = "GeminiAnalyzer";
-    // --- THIS IS THE CORRECTED ENDPOINT AS YOU INSTRUCTED ---
     private static final String GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
     private static final long MAX_TEXT_PAYLOAD_SIZE = 250000; // Limit text sent to API
 
@@ -330,6 +329,10 @@ public class GeminiAnalyzer {
     }
 
     private String buildImagePayload(String prompt, String base64Image, String mimeType) throws Exception {
+        // --- THIS IS THE FIX for the Image Analysis Error 400 ---
+        // The JSON structure for multimodal input is slightly different.
+        // The text prompt and the image data need to be separate objects within the 'parts' array.
+        
         JSONObject textPart = new JSONObject();
         textPart.put("text", prompt);
 
@@ -341,6 +344,7 @@ public class GeminiAnalyzer {
         imagePart.put("inline_data", inlineData);
 
         JSONArray partsArray = new JSONArray();
+        // Add the text part first, then the image part.
         partsArray.put(textPart);
         partsArray.put(imagePart);
 
