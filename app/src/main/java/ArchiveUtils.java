@@ -19,7 +19,8 @@ import androidx.core.content.ContextCompat;
 
 import com.github.junrar.Archive;
 import com.github.junrar.exception.RarException;
-import com.github.junrar.impl.FileVolumeManager;
+// --- FIX 1: This import is removed because the class no longer exists in the new library version ---
+// import com.github.junrar.impl.FileVolumeManager;
 import com.github.junrar.rarfile.FileHeader;
 
 import net.lingala.zip4j.ZipFile;
@@ -50,17 +51,10 @@ public class ArchiveUtils {
         }
     }
 
-    /**
-     * Starts the background compression service.
-     * @param context The application context.
-     * @param sourceFiles The list of files and/or folders to compress.
-     * @param destinationDir The directory where the final ZIP file will be saved.
-     */
     public static void startCompression(Context context, List<File> sourceFiles, File destinationDir) {
         Intent serviceIntent = new Intent(context, CompressionService.class);
         serviceIntent.setAction(CompressionService.ACTION_START_COMPRESSION);
 
-        // We must cast to ArrayList because List itself is not Serializable, but ArrayList is.
         serviceIntent.putExtra(CompressionService.EXTRA_SOURCE_FILES, new ArrayList<File>(sourceFiles));
         serviceIntent.putExtra(CompressionService.EXTRA_DESTINATION_DIR, (Serializable) destinationDir);
 
@@ -195,11 +189,13 @@ public class ArchiveUtils {
             File archiveFile = files[0];
             Archive archive = null;
             try {
-                archive = new Archive(new FileVolumeManager(archiveFile));
+                // --- FIX 2: The new version of the library is simpler. ---
+                // It no longer requires FileVolumeManager. You pass the File object directly.
+                archive = new Archive(archiveFile);
                 if (archive != null) {
                     FileHeader fh = archive.nextFileHeader();
                     while (fh != null) {
-                        String fileName = fh.getFileNameString().trim();
+                        String fileName = fh.getFileName().trim(); // Use getFileName() instead of getFileNameString()
                         publishProgress(fileName);
                         File destFile = new File(destinationDir, fileName);
                         if (fh.isDirectory()) {
