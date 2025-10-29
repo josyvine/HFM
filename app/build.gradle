@@ -29,6 +29,13 @@ android {
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/NOTICE'
     }
+
+    // --- THIS IS THE FIX for the PDFBox crash ---
+    // This tells the build system not to compress .txt files, which is necessary
+    // for the pdfbox library to find its internal 'glyphlist.txt' resource.
+    aaptOptions {
+        noCompress "txt"
+    }
 }
 
 dependencies {
@@ -66,7 +73,6 @@ dependencies {
     implementation 'net.lingala.zip4j:zip4j:2.11.5'
     implementation 'com.github.junrar:junrar:7.5.5'
 
-    // --- THIS IS THE FIX ---
-    // Downgrade OkHttp slightly to a version that is fully compatible with the D8 tool.
+    // OkHttp for Gemini API
     implementation 'com.squareup.okhttp3:okhttp:4.9.3'
 }
