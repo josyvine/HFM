@@ -3,7 +3,7 @@ buildscript {
     repositories {
         // Use the modern, required repositories. jcenter is shut down.
         google()
-        mavenCentral() 
+        mavenCentral()  
     }
     dependencies {
         // --- THIS IS THE FIX ---
