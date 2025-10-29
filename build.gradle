@@ -6,8 +6,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // FIX: Update the Android Gradle Plugin to a modern, stable version.
-        classpath 'com.android.tools.build:gradle:7.0.4'
+        // --- THIS IS THE FIX ---
+        // Upgrade the Android Gradle Plugin to a version that can handle the modern libraries.
+        classpath 'com.android.tools.build:gradle:7.4.2'
     }
 }
 
