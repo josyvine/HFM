@@ -296,6 +296,11 @@ public class SearchActivity extends Activity implements SearchAdapter.OnItemClic
         return groupedList;
     }
 
+    // ===================================================================
+    // === THIS METHOD IS UPDATED TO FIX THE CURSORWINDOW CRASH ===
+    // It now queries the MediaStore in smaller batches to avoid memory overflow
+    // but still returns one single, complete list. Your app logic is unchanged.
+    // ===================================================================
     private List<SearchResult> executeQueryWithMediaStore(QueryParameters params) {
         StringBuilder selection = new StringBuilder();
         List<String> selectionArgs = new ArrayList<>();
@@ -316,30 +321,42 @@ public class SearchActivity extends Activity implements SearchAdapter.OnItemClic
         }
 
         List<SearchResult> results = new ArrayList<>();
-        // --- THIS IS THE FIX for the CursorWindow crash ---
-        // 1. Remove MediaStore.Files.FileColumns.DATA from the projection to reduce memory usage.
         String[] projection = {
             MediaStore.Files.FileColumns._ID,
             MediaStore.Files.FileColumns.MEDIA_TYPE,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
-            MediaStore.Files.FileColumns.DISPLAY_NAME
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.DATA
         };
-        Cursor cursor = getContentResolver().query(queryUri, projection, selection.toString(),
-												   selectionArgs.toArray(new String[0]), MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC");
 
-        if (cursor != null) {
+        final int limit = 2000; // Process records in batches of 2000 to stay within memory limits.
+        int offset = 0;
+        String baseSortOrder = MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC";
+
+        while (true) {
+            String sortOrder = baseSortOrder + " LIMIT " + limit + " OFFSET " + offset;
+            Cursor cursor = null;
             try {
+                cursor = getContentResolver().query(queryUri, projection, selection.toString(),
+                                                   selectionArgs.toArray(new String[0]), sortOrder);
+
+                if (cursor == null || cursor.getCount() == 0) {
+                    // No more results, so we are done.
+                    break;
+                }
+
                 int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID);
                 int mediaTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE);
                 int dateModifiedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED);
                 int displayNameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME);
-                
+                int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA);
+
                 while (cursor.moveToNext()) {
                     long id = cursor.getLong(idColumn);
                     int mediaType = cursor.getInt(mediaTypeColumn);
                     long dateModifiedSeconds = cursor.getLong(dateModifiedColumn);
                     String displayName = cursor.getString(displayNameColumn);
-                    
+                    String path = cursor.getString(dataColumn);
                     Uri contentUri;
                     if (mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE) {
                         contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
@@ -348,43 +365,24 @@ public class SearchActivity extends Activity implements SearchAdapter.OnItemClic
                     } else {
                         contentUri = ContentUris.withAppendedId(queryUri, id);
                     }
-                    
-                    // 2. Get the path from the URI. This is slower per-item but memory-safe.
-                    String path = getPathFromUri(this, contentUri);
-
                     results.add(new SearchResult(contentUri, id, dateModifiedSeconds * 1000, displayName, path));
                 }
+
+                if (cursor.getCount() < limit) {
+                    // This was the last page of results, so we can stop.
+                    break;
+                }
+
+                offset += limit; // Prepare to query the next page of results.
+
             } finally {
-                cursor.close();
+                if (cursor != null) {
+                    cursor.close(); // Important to close the cursor for each batch.
+                }
             }
         }
         return results;
     }
-
-    // --- NEW HELPER METHOD to get path from a content URI safely ---
-    private static String getPathFromUri(Context context, Uri contentUri) {
-        Cursor cursor = null;
-        try {
-            String[] proj = { MediaStore.Files.FileColumns.DATA };
-            cursor = context.getContentResolver().query(contentUri, proj, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                int column_index = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA);
-                return cursor.getString(column_index);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to get path from URI: " + contentUri, e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        // Fallback for file URIs
-        if ("file".equals(contentUri.getScheme())) {
-            return contentUri.getPath();
-        }
-        return null;
-    }
-
 
     private List<SearchResult> performFallbackFileSearch(QueryParameters params) {
         List<SearchResult> results = new ArrayList<>();
