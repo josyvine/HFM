@@ -2,13 +2,11 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'com.hfm.app'
-    // FIX 1: Upgraded SDK to the modern standard (34)
     compileSdkVersion 34   
 
     defaultConfig {
         applicationId "com.hfm.app"
         minSdkVersion 21
-        // FIX 2: Target SDK 34 is now required by Google Play
         targetSdkVersion 34
         versionCode 1
         versionName "1.0"
@@ -21,35 +19,40 @@ android {
         }
     }
 
-    // FIX 3: Set Java version to 11 to match your GitHub build environment
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
 
-    // Required for junrar library
+    // --- UPDATE 1: Add an exclusion rule needed for the pdfbox library ---
     packagingOptions {
         exclude 'META-INF/LGPL2.1'
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/NOTICE'
+        exclude 'META-INF/DEPENDENCIES' // This is required for pdfbox to avoid build conflicts
     }
 }
 
-// FIX 4: All dependencies upgraded to their latest stable versions
 dependencies {
+    // This line is okay to keep, but the dependencies below are more reliable.
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // --- UPDATE 2: Explicitly add the missing libraries ---
+    // This tells Gradle to download them, fixing the "package does not exist" errors.
+    implementation 'net.jpountz.lz4:lz4:1.3.0'
+    implementation 'com.tom_roush:pdfbox-android:2.0.27.0'
+
 
     // Core AndroidX
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core-ktx:1.12.0' // Use -ktx version, it's the standard now
-    implementation 'androidx.documentfile:documentfile:1.0.1' // This one hasn't changed
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.documentfile:documentfile:1.0.1'
     implementation 'androidx.webkit:webkit:1.10.0'
-    // NOTE: LocalBroadcastManager is deprecated, but we'll keep it for now to avoid breaking your code.
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
 
     // UI Components
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
-    implementation 'androidx.cardview:cardview:1.0.0' // This one hasn't changed
+    implementation 'androidx.cardview:cardview:1.0.0'
 
     // Map library
     implementation 'org.osmdroid:osmdroid-android:6.1.18'
