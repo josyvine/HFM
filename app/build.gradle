@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     namespace 'com.hfm.app'
     // FIX 1: Upgraded SDK to the modern standard (34)
-    compileSdkVersion 34 
+    compileSdkVersion 34  
 
     defaultConfig {
         applicationId "com.hfm.app"
