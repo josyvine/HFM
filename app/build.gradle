@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'com.hfm.app'
-    compileSdkVersion 34    
+    compileSdkVersion 34   
 
     defaultConfig {
         applicationId "com.hfm.app"
@@ -24,24 +24,18 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
 
-    // --- UPDATE 1: Add an exclusion rule needed for the pdfbox library ---
+    // Required for junrar library. The pdfbox exclusion is no longer needed
+    // because we are not downloading it from the internet.
     packagingOptions {
         exclude 'META-INF/LGPL2.1'
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/NOTICE'
-        exclude 'META-INF/DEPENDENCIES' // This is required for pdfbox to avoid build conflicts
     }
 }
 
 dependencies {
-    // This line is okay to keep, but the dependencies below are more reliable.
+    // THIS LINE WILL NOW WORK CORRECTLY because you renamed your folder to 'libs'.
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    // --- UPDATE 2: Explicitly add the missing libraries ---
-    // This tells Gradle to download them, fixing the "package does not exist" errors.
-    implementation 'net.jpountz.lz4:lz4:1.3.0'
-    implementation 'com.tom_roush:pdfbox-android:2.0.27.0'
-
 
     // Core AndroidX
     implementation 'androidx.appcompat:appcompat:1.6.1'
