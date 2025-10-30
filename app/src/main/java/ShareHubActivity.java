@@ -2,11 +2,14 @@ package com.hfm.app;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
@@ -14,6 +17,8 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,14 +29,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
-
-// --- UPDATE 1: Import the Manifest class ---
-import android.Manifest;
 
 public class ShareHubActivity extends Activity implements WifiP2pManager.ChannelListener, WifiP2pManager.PeerListListener, WifiP2pManager.ConnectionInfoListener {
 
@@ -135,9 +138,10 @@ public class ShareHubActivity extends Activity implements WifiP2pManager.Channel
             return;
         }
         statusTextView.setText("Discovering devices...");
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            checkPermissions();
-            return;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES) != PackageManager.PERMISSION_GRANTED)) {
+             Toast.makeText(this, "Permissions are required. Please grant them and try again.", Toast.LENGTH_SHORT).show();
+             checkPermissions();
+             return;
         }
         manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
 				@Override
@@ -153,7 +157,8 @@ public class ShareHubActivity extends Activity implements WifiP2pManager.Channel
     }
 
     private void createGroup() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES) != PackageManager.PERMISSION_GRANTED)) {
+            Toast.makeText(this, "Permissions are required. Please grant them and try again.", Toast.LENGTH_SHORT).show();
             checkPermissions();
             return;
         }
@@ -189,9 +194,10 @@ public class ShareHubActivity extends Activity implements WifiP2pManager.Channel
     public void connect(WifiP2pDevice device) {
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            checkPermissions();
-            return;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES) != PackageManager.PERMISSION_GRANTED)) {
+             Toast.makeText(this, "Permissions are required. Please grant them and try again.", Toast.LENGTH_SHORT).show();
+             checkPermissions();
+             return;
         }
         manager.connect(channel, config, new WifiP2pManager.ActionListener() {
 				@Override
@@ -315,39 +321,66 @@ public class ShareHubActivity extends Activity implements WifiP2pManager.Channel
     }
 
     private boolean checkPermissions() {
-        // --- UPDATE 2: Modify the permission list based on the Android version ---
+        // --- THIS IS THE FIX ---
+        // This method now robustly checks for ALL permissions needed for sharing AND saving files.
         List<String> permissionsToRequest = new ArrayList<String>();
+
+        // 1. Check for modern Storage Permission (All Files Access)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11+
+            if (!Environment.isExternalStorageManager()) {
+                new AlertDialog.Builder(this)
+                    .setTitle("Permission Required")
+                    .setMessage("HFM Share needs 'All Files Access' permission to save received files. Please grant this permission in the next screen.")
+                    .setPositiveButton("Grant", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            try {
+                                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                                intent.addCategory("android.intent.category.DEFAULT");
+                                intent.setData(Uri.parse(String.format("package:%s", getApplicationContext().getPackageName())));
+                                startActivity(intent);
+                            } catch (Exception e) {
+                                Intent intent = new Intent();
+                                intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                                startActivity(intent);
+                            }
+                        }
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+                return false; // Stop here, user must grant permission first.
+            }
+        } else { // Android 10 and below
+             if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
+        }
         
-        // Permissions common to all versions
-        String[] commonPermissions = {
+        // 2. Check for Location and Wi-Fi permissions
+        String[] wifiPermissions = {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_WIFI_STATE,
             Manifest.permission.CHANGE_WIFI_STATE
         };
-
-        for (String permission : commonPermissions) {
-            if (ActivityCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+        for (String permission : wifiPermissions) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(permission);
             }
         }
-
-        // Add version-specific permissions
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // Android 12 (API 31) and higher
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES) != PackageManager.PERMISSION_GRANTED) {
+        
+        // 3. Check for new Wi-Fi permission on Android 12+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES) != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(Manifest.permission.NEARBY_WIFI_DEVICES);
             }
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) { // Below Android 10 (API 29)
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            }
-        }
-
+        // 4. If any standard permissions are missing, request them.
         if (!permissionsToRequest.isEmpty()) {
             ActivityCompat.requestPermissions(this, permissionsToRequest.toArray(new String[0]), PERMISSIONS_REQUEST_CODE);
             return false;
         }
+
         return true;
     }
 
@@ -362,6 +395,7 @@ public class ShareHubActivity extends Activity implements WifiP2pManager.Channel
                 }
             }
             if (allGranted) {
+                // Permissions were granted, we can now safely register the receiver.
                 receiver = new WiFiDirectBroadcastReceiver(manager, channel, this);
                 registerReceiver(receiver, intentFilter);
             } else {
